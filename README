@@ -1,3 +1,17 @@
 riscv-invicta
+Author: Quan Nguyen - [first][last]@berkeley.edu
 
-riscv-invicta is a simple 32-bit RISC-V core.
+
+                   O o o
+                ||
+                ||
+      ________n_||
+      |  __  /__ |
+      |_/xx\_/xx\|
+        \__/ \__/
+=========================
+(Image source: Wikipedia)
+
+
+riscv-invicta is a simple 32-bit, one-stage, in-order RISC-V core.
+
