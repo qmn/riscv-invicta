@@ -68,6 +68,29 @@ module reg_decoder (
 	end
 endmodule
 
+module pcreg_decoder (
+	output reg [63:0] str,
+	input [4:0] r
+);
+	always @ (*) begin
+		case (r)
+			0 : str = "  status";
+			1 : str = "     epc";
+			2 : str = "badvaddr";
+			3 : str = "    evec";
+			4 : str = "   count";
+			5 : str = " compare";
+			6 : str = "   cause";
+			7 : str = "    ptbr";
+			12: str = "      k0";
+			13: str = "      k1";
+			30: str = "  tohost";
+			31: str = "fromhost";
+			default: str = "???";
+		endcase
+	end
+endmodule
+
 module imm_decoder (
 	output [47:0] str,
 	input [11:0] imm12
@@ -153,6 +176,7 @@ module inst_decoder (
 	wire [23:0] wd_s;
 	wire [23:0] rs1_s;
 	wire [23:0] rs2_s;
+	wire [63:0] pcr_s;
 
 	wire [47:0] imm12_s;
 	wire [47:0] split_imm12_s;
@@ -163,6 +187,7 @@ module inst_decoder (
 	reg_decoder r1(wd_s, wd);
 	reg_decoder r2(rs1_s, inst[26:22]);
 	reg_decoder r3(rs2_s, inst[21:17]);
+	pcreg_decoder r4(pcr_s, inst[26:22]);
 
 	imm_decoder id(imm12_s, imm12);
 	lui_decoder ld(imm20_s, imm20);
@@ -199,6 +224,10 @@ module inst_decoder (
 				else
 					str[(`STR_LEN - 8) * 8 - 1:0] = "";
 
+			`OPCODE_BRANCH:
+				str[(`STR_LEN - 8) * 8 - 1:0] =
+					{" ", rs1_s, ",", rs2_s, ",", branch_addr_s};
+
 			`OPCODE_LOAD:
 				str[(`STR_LEN - 8) * 8 - 1:0] =
 					{" ", wd_s, ",", imm12_s, "(", rs1_s, ")"};
@@ -206,6 +235,10 @@ module inst_decoder (
 			`OPCODE_STORE:
 				str[(`STR_LEN - 8) * 8 - 1:0] =
 					{" ", rs2_s, ",", split_imm12_s, "(", rs1_s, ")"};
+
+			`OPCODE_PCR:
+				str[(`STR_LEN - 8) * 8 - 1:0] =
+					{" ", wd_s, ",", rs2_s, ",", pcr_s};
 
 			default:
 				str[(`STR_LEN - 8) * 8 - 1:0] = "";
@@ -289,13 +322,22 @@ module inst_decoder (
 
 			`OPCODE_BRANCH:
 				case (funct3)
-					`F3_BEQ:  op_s = "beq      ";
-					`F3_BNE:  op_s = "bne      ";
-					`F3_BLT:  op_s = "blt      ";
-					`F3_BGE:  op_s = "bge      ";
-					`F3_BLTU: op_s = "bltu     ";
-					`F3_BGEU: op_s = "bgeu     ";
-					default:  op_s = "???      ";
+					`F3_BEQ:  op_s = "beq     ";
+					`F3_BNE:  op_s = "bne     ";
+					`F3_BLT:  op_s = "blt     ";
+					`F3_BGE:  op_s = "bge     ";
+					`F3_BLTU: op_s = "bltu    ";
+					`F3_BGEU: op_s = "bgeu    ";
+					default:  op_s = "???     ";
+				endcase
+
+			`OPCODE_PCR:
+				case (funct3)
+					`F3_CLEARPCR: op_s = "clearpcr";
+					`F3_SETPCR:   op_s = "setpcr  ";
+					`F3_MFPCR:    op_s = "mfpcr   ";
+					`F3_MTPCR:    op_s = "mtpcr   ";
+					default:      op_s = "???     ";
 				endcase
 
 			default:

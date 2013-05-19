@@ -52,7 +52,7 @@ module branch_jump (
 	assign jump_target = (opcode == `OPCODE_J || opcode == `OPCODE_JAL) ? j_offset + pc : rd1;
 
 	/* branch */
-	assign branch_target = pc + $signed(sext_split_imm);
+	assign branch_target = pc + ($signed(sext_split_imm) << 1);
 	
 	reg branch_sat;
 

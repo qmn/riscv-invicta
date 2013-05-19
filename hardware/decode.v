@@ -32,12 +32,15 @@ module decode (
 	output [4:0] rs2,
 	output [4:0] wd,
 
-	output reg [1:0] wb_sel,
+	output reg [2:0] wb_sel,
 
 	output rf_wr_en,
 
 	output memory_request,
-	output memory_request_type
+	output memory_request_type,
+
+	output reg pcr_enable,
+	output reg [1:0] pcr_cmd
 );
 	wire [6:0] opcode = inst[6:0];
 	assign rs1 = inst[26:22];
@@ -49,7 +52,8 @@ module decode (
 	                   opcode == `OPCODE_LUI ||
 	                   opcode == `OPCODE_LOAD ||
 	                   opcode == `OPCODE_JAL ||
-	                   opcode == `OPCODE_JALR);
+	                   opcode == `OPCODE_JALR ||
+			   opcode == `OPCODE_PCR);
 
 	assign memory_request = (opcode == `OPCODE_LOAD || 
 	                         opcode == `OPCODE_STORE);
@@ -65,9 +69,22 @@ module decode (
 				wb_sel = `WB_MEM;
 			`OPCODE_JAL, `OPCODE_JALR:
 				wb_sel = `WB_PC4;
+			`OPCODE_PCR:
+				wb_sel = `WB_PCR;
 			default:
-				wb_sel = 2'b0;
+				wb_sel = 0;
 		endcase
+	end
+
+	always @ (*) begin
+		if (opcode == `OPCODE_PCR) begin
+			pcr_enable = 1;
+			/* funct3 map for cmd */
+			pcr_cmd = inst[8:7];
+		end else begin
+			pcr_enable = 0;
+			pcr_cmd = 2'b00;
+		end
 	end
 
 endmodule

@@ -48,7 +48,7 @@ module datapath (
 	reg [31:0] pc;
 
 	wire [1:0] next_pc_sel;
-	wire [1:0] wb_sel;
+	wire [2:0] wb_sel;
 	wire rf_wr_en;
 
 	wire branch_taken;
@@ -94,10 +94,14 @@ module datapath (
 	wire [4:0] ex_rs2;
 	wire [4:0] ex_wd;
 
+	wire cp_enable;
+	wire [1:0] pcr_cmd;
+
 	decode d(.inst(inst),
 		.rs1(ex_rs1), .rs2(ex_rs2), .wd(ex_wd),
 		.wb_sel(wb_sel), .rf_wr_en(rf_wr_en),
-		.memory_request(memory_request), .memory_request_type(memory_request_type));
+		.memory_request(memory_request), .memory_request_type(memory_request_type),
+		.pcr_enable(cp_enable), .pcr_cmd(pcr_cmd));
 
 	wire [31:0] rf_rd1;
 	wire [31:0] rf_rd2;
@@ -149,11 +153,20 @@ module datapath (
 		.write_data(write_data), .write_mask(write_mask),
 		.load_data(load_data), .output_data(mem_data));
 
+	wire [31:0] pcr_data;
+
+	control_processor cp(.clk(clk), .reset(reset), .stall(stall),
+		.inst(inst),
+		.enable(cp_enable), 
+		.pcr_write_data({1'b0, pcr_cmd} == `F3_MTPCR ? rf_rd2 : rf_rd1), 
+		.pcr(ex_rs1), .cmd(pcr_cmd), .pcr_data(pcr_data));
+
 	always @ (*) begin
 		case (wb_sel)
 			`WB_ALU: rf_wdata = alu_out;
 			`WB_MEM: rf_wdata = mem_data;
 			`WB_PC4: rf_wdata = pc + 4;
+			`WB_PCR: rf_wdata = pcr_data;
 			default: rf_wdata = 32'b0;
 		endcase
 	end

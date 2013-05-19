@@ -37,6 +37,7 @@
 `define OPCODE_JAL	7'b1101111
 `define OPCODE_JALR	7'b1101011
 `define OPCODE_BRANCH	7'b1100011
+`define OPCODE_PCR	7'b1111011
 
 `define F3_BEQ		3'b000
 `define F3_BNE		3'b001
@@ -73,6 +74,11 @@
 `define F3_SH		3'b001
 `define F3_SW		3'b010
 
+`define F3_CLEARPCR	3'b000
+`define F3_SETPCR	3'b001
+`define F3_MFPCR	3'b010
+`define F3_MTPCR	3'b011
+
 `define ALU_ADD 	4'd0
 `define ALU_SLL		4'd1
 `define ALU_SLT		4'd2
@@ -95,9 +101,10 @@
 `define MUL_HI_SU	2'b10
 `define MUL_HI_UU	2'b11
 
-`define WB_ALU		2'b01
-`define WB_MEM		2'b10
-`define WB_PC4		2'b11
+`define WB_ALU		3'b001
+`define WB_MEM		3'b010
+`define WB_PC4		3'b011
+`define WB_PCR		3'b100
 
 `define NPC_PLUS4	2'b00
 `define NPC_BRANCH	2'b01
@@ -109,3 +116,29 @@
 
 `define MEM_CMD_READ	1'b0
 `define MEM_CMD_WRITE	1'b1
+
+`define PCR_STATUS	5'd0
+`define PCR_EPC		5'd1
+`define PCR_BADVADDR	5'd2
+`define PCR_EVEC	5'd3
+`define PCR_COUNT	5'd4
+`define PCR_COMPARE	5'd5
+`define PCR_CAUSE	5'd6
+`define PCR_PTBR	5'd7
+`define PCR_K0		5'd12
+`define PCR_K1		5'd13
+`define PCR_TOHOST	5'd30
+`define PCR_FROMHOST	5'd31
+
+`define SR_IP		32'hFF000000
+`define SR_IM		32'h00FF0000
+`define SR_VM		32'h00000100
+`define SR_S64		32'h00000080
+`define SR_U64		32'h00000040
+`define SR_S		32'h00000020
+`define SR_PS		32'h00000010
+`define SR_EC		32'h00000008
+`define SR_EV		32'h00000004
+`define SR_EF		32'h00000002
+`define SR_ET		32'h00000001
+

@@ -59,8 +59,9 @@ module datapath_test ();
 		reset = 0;
 		#(cycle);
 
-		for (i = 0; i < 60; i = i + 1) begin
+		while (top.dpath.cp.tohost == 0) begin
 			#(cycle);
+			i = i + 1;
 			$display("C %10d: pc=[%08x] [%s] W[r%2d=%08x][%b] R[r%2d=%08x] R[r%2d=%08x] inst=[%08x] %s", 
 				i, top.dpath.pc, top.stall ? "S" : " ",
 				top.dpath.ex_wd, top.dpath.rf_wdata, top.dpath.rf_wr_en,
@@ -68,6 +69,12 @@ module datapath_test ();
 				top.dpath.ex_rs2, top.dpath.rf_rd2,
 				top.dpath.inst,
 				top.stall ? "" : s);
+		end
+	
+		if (top.dpath.cp.tohost == 1) begin
+			$display("*** SUCCESS (tohost = 1) ***");
+		end else begin
+			$display("*** FAILURE (tohost = %d) ***", top.dpath.cp.tohost);
 		end
 
 		$finish();
