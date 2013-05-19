@@ -26,6 +26,8 @@
 `define INSTR_NOP 	32'h00000013
 `define PC_START	32'h00000000 /* change me back */
 
+`define STR_LEN		26 /* decoded string length */
+
 `define OPCODE_OP_IMM 	7'b0010011
 `define OPCODE_OP	7'b0110011
 `define OPCODE_LUI	7'b0110111
@@ -53,6 +55,9 @@
 `define F3_AND		3'b111
 
 `define F3_MUL		3'b000
+`define F3_MULH		3'b001
+`define F3_MULHSU	3'b010
+`define F3_MULHU	3'b011
 `define F3_DIV		3'b100
 `define F3_DIVU		3'b101
 `define F3_REM		3'b110

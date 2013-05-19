@@ -36,10 +36,21 @@ module datapath_test ();
 
 	always #(half_cycle) clk = ~clk;
 
+	wire [(`STR_LEN * 8) - 1:0] s;
+
 	top top(.clk(clk), .reset(reset));
+
+	inst_decoder id(.str(s), 
+		.jump_target(top.dpath.jump_target), 
+		.branch_target(top.dpath.branch_target),
+		.inst(top.dpath.inst));
+
+	integer i;
 
 	initial begin
 		$dumpvars();
+
+		i = 0;
 
 		/* toggle reset */
 		#(cycle);
@@ -48,9 +59,17 @@ module datapath_test ();
 		reset = 0;
 		#(cycle);
 
-		#(cycle * 60);
+		for (i = 0; i < 60; i = i + 1) begin
+			#(cycle);
+			$display("C %10d: pc=[%08x] [%s] W[r%2d=%08x][%b] R[r%2d=%08x] R[r%2d=%08x] inst=[%08x] %s", 
+				i, top.dpath.pc, top.stall ? "S" : " ",
+				top.dpath.ex_wd, top.dpath.rf_wdata, top.dpath.rf_wr_en,
+				top.dpath.ex_rs1, top.dpath.rf_rd1, 
+				top.dpath.ex_rs2, top.dpath.rf_rd2,
+				top.dpath.inst,
+				top.stall ? "" : s);
+		end
 
-		$display("all sane");
 		$finish();
 	end
 	
