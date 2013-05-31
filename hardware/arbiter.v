@@ -36,35 +36,35 @@ module arbiter (
 	input fetch_request,
 	output fetch_data_valid,
 
-	input [31:0] memory_addr,
-	input [31:0] write_data,
-	input [3:0] write_mask,
-	input memory_request,
-	input memory_request_type,
-	output memory_data_valid,
+	input [31:0] dmem_addr,
+	input [31:0] dmem_write_data,
+	input [3:0] dmem_write_mask,
+	input dmem_request,
+	input dmem_request_type,
+	output dmem_data_valid,
 
 	/* memory interface */
-	output reg [31:0] addr,
-	output [3:0] mask, /* write */
-	output enable,
-	output reg cmd,
-	input [31:0] data,
-	output [31:0] wdata,
-	input valid
+	output reg [31:0] mem_addr,
+	output [3:0] mem_mask, /* write */
+	output mem_enable,
+	output reg mem_cmd,
+	input [31:0] mem_data,
+	output [31:0] mem_wdata,
+	input mem_valid
 );
 
-	wire requests_pending = fetch_request | memory_request;
+	wire requests_pending = fetch_request | dmem_request;
 
 	reg fetch_satisfied;
 	reg memory_satisfied;
 
-	localparam S_IDLE      = 2'b00;
-	localparam S_SVC_FETCH = 2'b01;
-	localparam S_SVC_MEM_R = 2'b10;
-	localparam S_SVC_MEM_W = 2'b11;
+	localparam S_IDLE      = 3'd0;
+	localparam S_SVC_FETCH = 3'd1;
+	localparam S_SVC_MEM_R = 3'd2;
+	localparam S_SVC_MEM_W = 3'd3;
 
-	reg [1:0] state;
-	reg [1:0] next_state;
+	reg [2:0] state;
+	reg [2:0] next_state;
 
 	always @ (posedge clk) begin
 		if (reset) begin
@@ -77,13 +77,17 @@ module arbiter (
 	always @ (posedge clk) begin
 		if (reset) begin
 			fetch_satisfied  <= 1;
-			memory_satisfied <= 1;
 		end else if (state == S_IDLE && next_state != S_IDLE) begin
 			fetch_satisfied  <= (fetch_request ? 0 : 1);
-			memory_satisfied <= (memory_request ? 0 : 1);
-		end else if (state == S_SVC_FETCH && valid) begin
+		end else if (state == S_SVC_FETCH && mem_valid) begin
 			fetch_satisfied  <= 1;
-		end else if (state == S_SVC_MEM_R && valid) begin
+		end
+
+		if (reset) begin
+			memory_satisfied <= 1;
+		end else if (state == S_IDLE && next_state != S_IDLE) begin
+			memory_satisfied <= (dmem_request ? 0 : 1);
+		end else if (state == S_SVC_MEM_R && mem_valid) begin
 			memory_satisfied <= 1;
 		end
 	end
@@ -94,8 +98,8 @@ module arbiter (
 				if (requests_pending)
 					if (fetch_request)
 						next_state = S_SVC_FETCH;
-					else if (memory_request)
-						if (memory_request_type == `MEM_REQ_WRITE)
+					else if (dmem_request)
+						if (dmem_request_type == `MEM_REQ_WRITE)
 							next_state = S_SVC_MEM_W;
 						else
 							next_state = S_SVC_MEM_R;
@@ -107,8 +111,8 @@ module arbiter (
 			S_SVC_FETCH:
 				if (!fetch_satisfied)
 					next_state = S_SVC_FETCH;
-				else if (memory_request)
-					if (memory_request_type == `MEM_REQ_WRITE)
+				else if (dmem_request)
+					if (dmem_request_type == `MEM_REQ_WRITE)
 						next_state = S_SVC_MEM_W;
 					else
 						next_state = S_SVC_MEM_R;
@@ -133,32 +137,32 @@ module arbiter (
 	always @ (*) begin
 		case (state)
 			S_SVC_FETCH:
-				addr = fetch_addr;
+				mem_addr = fetch_addr;
 			S_SVC_MEM_R, S_SVC_MEM_W:
-				addr = memory_addr;
+				mem_addr = dmem_addr;
 			default:
-				addr = 0;			
+				mem_addr = 0;			
 		endcase
 	end
 
 	assign stall = (next_state != S_IDLE);
 
-	assign fetch_data_valid = (state == S_SVC_FETCH & valid);
-	assign memory_data_valid = (state == S_SVC_MEM_R & valid);
+	assign fetch_data_valid = (state == S_SVC_FETCH & mem_valid);
+	assign dmem_data_valid = (state == S_SVC_MEM_R & mem_valid);
 
-	assign request_data = data;
-	assign wdata = write_data;
-	assign enable = (state == S_SVC_FETCH && !fetch_satisfied) || 
-	                (state == S_SVC_MEM_R && !memory_satisfied) ||
-	                (state == S_SVC_MEM_W);
-	assign mask = write_mask;
+	assign request_data = mem_data;
+	assign mem_wdata = dmem_write_data;
+	assign mem_enable = (state == S_SVC_FETCH && !fetch_satisfied) || 
+	                    (state == S_SVC_MEM_R && !memory_satisfied) ||
+	                    (state == S_SVC_MEM_W);
+	assign mem_mask = dmem_write_mask;
 
 	always @ (*) begin
 		case (state)
-			S_SVC_FETCH: cmd = `MEM_CMD_READ;
-			S_SVC_MEM_R: cmd = `MEM_CMD_READ;
-			S_SVC_MEM_W: cmd = `MEM_CMD_WRITE;
-			default: cmd = 0;
+			S_SVC_FETCH: mem_cmd = `MEM_CMD_READ;
+			S_SVC_MEM_R: mem_cmd = `MEM_CMD_READ;
+			S_SVC_MEM_W: mem_cmd = `MEM_CMD_WRITE;
+			default: mem_cmd = 0;
 		endcase
 	end
 	

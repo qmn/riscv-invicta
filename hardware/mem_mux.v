@@ -1,4 +1,4 @@
-/*
+/* 
  * Copyright (c) 2013, Quan Nguyen
  * All rights reserved.
  * 
@@ -23,47 +23,43 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Simulated Memory Device */
-module mem (
-	input clk,
-	input reset,
+module memory_mux (
+	input select,
+
+	input enable_0,
+	input command_0,
+	input [31:0] address_0,
+	input [31:0] write_data_0,
+	input [3:0]  write_mask_0,
+	output [31:0] read_data_0,
+	output valid_0,
 	
-	input [31:0] addr,
-	input [3:0] mask,
-	input enable,
+	input enable_1,
+	input command_1,
+	input [31:0] address_1,
+	input [31:0] write_data_1,
+	input [3:0]  write_mask_1,
+	output [31:0] read_data_1,
+	output valid_1,
 
-	input cmd,
-	input [31:0] write_data,
-	output reg [31:0] load_data,
-	output reg valid
+	output enable,
+	output command,
+	output [31:0] address,
+	output [31:0] write_data,
+	output [3:0] write_mask,
+	input [31:0] read_data,
+	input valid
 );
-	reg [31:0] memory [255:0];
 
-	wire [7:0] word_addr = addr[9:2];
-
-	initial begin
-		$readmemh("mem.hex", memory);
-	end
-
-	always @ (*) begin
-		if (enable && cmd == `MEM_CMD_READ) begin
-			load_data = memory[word_addr];
-			valid = 1;
-		end else begin
-			load_data = 32'b0;
-			valid = 0;
-		end
-	end
-
-	wire [31:0] expanded_mask = {mask[3] ? 8'hFF : 8'h00,
-	                             mask[2] ? 8'hFF : 8'h00,
-	                             mask[1] ? 8'hFF : 8'h00,
-	                             mask[0] ? 8'hFF : 8'h00};
-
-	always @ (*) begin
-		if (enable && cmd == `MEM_CMD_WRITE) begin
-			memory[word_addr] = (memory[word_addr] & ~expanded_mask) | write_data;
-		end
-	end
+	assign enable = select ? enable_1 : enable_0;
+	assign command = select ? command_1 : command_0;
+	assign address = select ? address_1 : address_0;
+	assign write_data = select ? write_data_1 : write_data_0;
+	assign write_mask = select ? write_mask_1 : write_mask_0;
+	assign read_data_1 = read_data;
+	assign read_data_0 = read_data;
+	assign valid_1 =  select ? valid : 1'b0;
+	assign valid_0 = !select ? valid : 1'b0;
 
 endmodule
+	

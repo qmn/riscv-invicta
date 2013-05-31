@@ -23,40 +23,52 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-module top (
+/* Simulated Memory */
+module mem (
 	input clk,
-	input reset
-);
-
-	wire stall;
-
-	wire [31:0] fetch_addr;
-	wire fetch_request;
-	wire fetch_data_valid;
+	input reset,
 	
-	wire [31:0] memory_addr;
-	wire [31:0] write_data;
-	wire [3:0] write_mask;
-	wire memory_request;
-	wire memory_request_type;
-	wire memory_data_valid;
+	input [31:0] addr,
+	input [3:0] mask,
+	input enable,
 
-	wire[31:0] request_data;
+	input cmd,
+	input [31:0] write_data,
+	output reg [31:0] load_data,
+	output reg valid
+);
+	localparam MEMORY_SIZE = (1 << 14);
 
-	wire [31:0] ptbr;
-	wire vm_enable;
+	reg [31:0] memory [MEMORY_SIZE - 1:0];
 
-	datapath dpath(.clk(clk), .reset(reset), .stall(stall),
-		.fetch_addr(fetch_addr), .fetch_request(fetch_request), .fetch_data_valid(fetch_data_valid),
-		.dmem_addr(memory_addr), .dmem_write_data(write_data), .dmem_write_mask(write_mask),
-		.dmem_request(memory_request), .dmem_request_type(memory_request_type), .dmem_data_valid(memory_data_valid),
-		.request_data(request_data), .vm_enable(vm_enable), .ptbr(ptbr), .flush_tlb(flush_tlb));
+	wire [29:0] word_addr = addr[31:2];
 
-	memory_system ms(.clk(clk), .reset(reset), .stall(stall),
-		.request_data(request_data),
-		.vm_enable(vm_enable), .ptbr(ptbr), .flush_tlb(flush_tlb),
-		.fetch_addr(fetch_addr), .fetch_request(fetch_request), .fetch_data_valid(fetch_data_valid),
-		.dmem_addr(memory_addr), .dmem_write_data(write_data), .dmem_write_mask(write_mask),
-		.dmem_request(memory_request), .dmem_request_type(memory_request_type), .dmem_data_valid(memory_data_valid));
+	initial begin
+		/* Loads by word addresses. Address 0x302c corresponds to 0x0c0b. */
+		$readmemh("mem.hex", memory);
+	end
+
+	always @ (*) begin
+		if (enable && cmd == `MEM_CMD_READ) begin
+			load_data = memory[word_addr];
+			valid = 1;
+		end else begin
+			load_data = 32'b0;
+			valid = 0;
+		end
+	end
+
+	wire [31:0] expanded_mask = {mask[3] ? 8'hFF : 8'h00,
+	                             mask[2] ? 8'hFF : 8'h00,
+	                             mask[1] ? 8'hFF : 8'h00,
+	                             mask[0] ? 8'hFF : 8'h00};
+
+	wire [31:0] to_be_written = (memory[word_addr] & ~expanded_mask) | (write_data & expanded_mask);
+
+	always @ (*) begin
+		if (enable && cmd == `MEM_CMD_WRITE) begin
+			memory[word_addr] = to_be_written;
+		end
+	end
 
 endmodule

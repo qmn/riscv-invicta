@@ -109,7 +109,7 @@
 `define NPC_PLUS4	2'b00
 `define NPC_BRANCH	2'b01
 `define NPC_JUMP	2'b10
-`define NPC_EPC		2'b11
+`define NPC_EVEC	2'b11
 
 `define MEM_REQ_READ	1'b0
 `define MEM_REQ_WRITE	1'b1
@@ -142,3 +142,9 @@
 `define SR_EF		32'h00000002
 `define SR_ET		32'h00000001
 
+`define IRQ_TIMER	3'd7
+
+`define PAGE_T		32'h1
+`define PAGE_E		32'h2
+`define PAGE_R		32'h4
+`define PAGE_D		32'h8

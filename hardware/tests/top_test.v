@@ -33,6 +33,7 @@ module datapath_test ();
 	initial clk = 0;
 	parameter half_cycle = 5;
 	localparam cycle = 2 * half_cycle;
+	localparam timeout = 100;
 
 	always #(half_cycle) clk = ~clk;
 
@@ -59,7 +60,7 @@ module datapath_test ();
 		reset = 0;
 		#(cycle);
 
-		while (top.dpath.cp.tohost == 0) begin
+		while (top.dpath.cp.tohost == 0 && i < timeout) begin
 			#(cycle);
 			i = i + 1;
 			$display("C %10d: pc=[%08x] [%s] W[r%2d=%08x][%b] R[r%2d=%08x] R[r%2d=%08x] inst=[%08x] %s", 
@@ -71,6 +72,11 @@ module datapath_test ();
 				top.stall ? "" : s);
 		end
 	
+		if (i == timeout) begin
+			$display("*** TIMEOUT ***");
+			$finish();
+		end
+
 		if (top.dpath.cp.tohost == 1) begin
 			$display("*** SUCCESS (tohost = 1) ***");
 		end else begin

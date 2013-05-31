@@ -1,6 +1,24 @@
 VERILOG = iverilog
 
-SRCS = alu.v alu_dec.v consts.vh datapath.v regfile.v decode.v multiplier.v branch_jump.v memory.v arbiter.v mem.v top.v inst_decoder.v control_processor.v
+SRCS = alu.v \
+	alu_dec.v \
+	arbiter.v \
+	branch_jump.v \
+	consts.vh \
+	control_processor.v \
+	data_memory.v \
+	datapath.v \
+	decode.v \
+	inst_decoder.v \
+	mem_mux.v \
+	memory_system.v \
+	multiplier.v \
+	regfile.v \
+	simulated_memory.v \
+	tlb.v \
+	top.v \
+	translater.v
+
 
 TEST_SRCS = tests/top_test.v
 

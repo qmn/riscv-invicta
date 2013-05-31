@@ -25,7 +25,7 @@
 
 `include "consts.vh"
 
-module memory (
+module data_memory (
 	input [31:0] inst,
 	input [31:0] data,
 	input [31:0] addr,
