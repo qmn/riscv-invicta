@@ -26,7 +26,7 @@
 `include "consts.vh"
 `timescale 1ns/1ps
 
-module datapath_test ();
+module top_test ();
 	reg clk;
 	reg reset;
 

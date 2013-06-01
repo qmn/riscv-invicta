@@ -23,6 +23,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+`include "consts.vh"
+
 module memory_system (
 	input clk,
 	input reset,

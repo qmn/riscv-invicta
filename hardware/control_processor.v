@@ -110,10 +110,12 @@ module control_processor (
 		else if (!stall && enable && pcr == `PCR_COUNT)
 			count <= write_data;
 
-		if (reset)
+		if (reset) begin
 			compare <= 32'h0;
-		else if (!stall && enable && pcr == `PCR_COMPARE)
+		end else if (!stall && enable && pcr == `PCR_COMPARE) begin
 			compare <= write_data;
+			interrupts_pending[`IRQ_TIMER] = 0;
+		end
 
 		if (reset)
 			cause <= 32'h0;
@@ -166,16 +168,20 @@ module control_processor (
 	end
 
 	/* Timer interrupt */
+	always @ (posedge clk) begin
+		count <= count + 1;
+	end
+
 	always @ (*) begin
 		if (count == compare)
 			interrupts_pending[`IRQ_TIMER] = 1;
-		else
-			interrupts_pending[`IRQ_TIMER] = 0;
 	end
 
 	wire interrupt_mask = status[23:16];
 
 	assign interrupt = ((status & `SR_ET) && (interrupt_mask & interrupts_pending));
+
+	/* Virtual memory */
 	assign flush_tlb = (!stall && enable && pcr == `PCR_PTBR);
 	assign vm_enable = status[8];
 

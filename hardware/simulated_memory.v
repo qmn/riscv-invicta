@@ -24,6 +24,9 @@
  */
 
 /* Simulated Memory */
+
+`include "consts.vh"
+
 module mem (
 	input clk,
 	input reset,
