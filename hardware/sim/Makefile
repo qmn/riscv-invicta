@@ -23,11 +23,44 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
 
-sim-xilinx :
-	make -C sim test-xilinx
+# Simulation Makefile
 
-sim-icarus :
-	make -C sim test-icarus
+ICARUS_VERILOG = iverilog
+XILINX_FUSE = fuse
 
-clean:
-	make -C sim clean
+# Module of the "top" module
+TOP = top_test
+
+INC_SRCS = ../src/consts.vh
+TEST_SRCS = ../src/tests/top_test.v
+SRCS = ../src/*.v
+
+
+# Icarus Verilog backend
+test-icarus : iverilog.out
+	./iverilog.out
+
+iverilog.out: $(TEST_SRCS) $(SRCS)
+	$(ICARUS_VERILOG) -o $@ -I ../src $(TEST_SRCS) $(SRCS)
+
+# Xilinx toolchain
+test-xilinx : fuse.out fuse.tcl
+	./fuse.out -tclbatch fuse.tcl
+
+fuse.out : invicta.prj
+	$(XILINX_FUSE) -o $@ -i ../src -prj $< $(TOP)
+
+invicta.prj :
+	for i in $(INC_SRCS) $(SRCS) $(TEST_SRCS); do \
+		echo "verilog work" $$i >> invicta.prj; \
+	done
+
+fuse.tcl :
+	echo "run all" > $@
+
+XILINX_JUNK = fuse* invicta.prj isim* *.vcd
+
+JUNK = iverilog.out $(XILINX_JUNK)
+
+clean :
+	rm -rf $(JUNK)
